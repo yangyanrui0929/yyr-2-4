@@ -116,11 +116,83 @@ const GameData = {
     ],
 
     districts: [
-        { id: 'east', name: '城东', trust: 60 },
-        { id: 'west', name: '城西', trust: 50 },
-        { id: 'south', name: '城南', trust: 55 },
-        { id: 'north', name: '城北', trust: 45 },
-        { id: 'center', name: '市中心', trust: 70 }
+        { id: 'east', name: '城东', trust: 60, knowledge: 55 },
+        { id: 'west', name: '城西', trust: 50, knowledge: 40 },
+        { id: 'south', name: '城南', trust: 55, knowledge: 65 },
+        { id: 'north', name: '城北', trust: 45, knowledge: 35 },
+        { id: 'center', name: '市中心', trust: 70, knowledge: 75 }
+    ],
+
+    cipherSchemes: [
+        {
+            id: 'simple',
+            name: '简单暗号',
+            icon: '🔓',
+            desc: '简单替换，容易被敌对势力截获破解',
+            security: 25,
+            powerCost: 5,
+            leakChance: 0.6,
+            decodeBase: 85,
+            color: '#f39c12'
+        },
+        {
+            id: 'medium',
+            name: '中等暗号',
+            icon: '🔐',
+            desc: '双重编码，平衡安全性与可读性',
+            security: 55,
+            powerCost: 10,
+            leakChance: 0.25,
+            decodeBase: 60,
+            color: '#3498db'
+        },
+        {
+            id: 'complex',
+            name: '复杂暗号',
+            icon: '🛡️',
+            desc: '多层加密，极难破解但部分城区可能误解',
+            security: 85,
+            powerCost: 15,
+            leakChance: 0.08,
+            decodeBase: 35,
+            color: '#9b59b6'
+        }
+    ],
+
+    cipherMessageTypes: [
+        {
+            id: 'rescue_time',
+            name: '救援时间',
+            icon: '🚁',
+            examples: ['明日下午三点', '后天清晨六点', '三日后正午时分', '今晚九点整'],
+            distortedExamples: {
+                simple: ['明日~下午~三~点', '后天~早上~六~点', '三天后~中午', '今晚~九点'],
+                medium: ['日落两次后三角时刻', '日出三次后半打时刻', '五次日落后正午', '月升后三三时刻'],
+                complex: ['双日轮转后第三影射', '晨光三度照后六弦归位', '五轮交替后天顶正位', '银盘高悬三三方至']
+            }
+        },
+        {
+            id: 'supply_location',
+            name: '物资地点',
+            icon: '📦',
+            examples: ['中心广场', '城西仓库', '南区医院', '北区学校'],
+            distortedExamples: {
+                simple: ['中心~广~场', '城西~仓~库', '南区~医~院', '北区~学~校'],
+                medium: ['众流汇聚之地', '落日方向藏粮处', '南方红十字之所', '北面读书堂'],
+                complex: ['四方交汇星位所指', '暮光沉落金库暗门', '南火红纹庇护之所', '北辰书卷封印之殿']
+            }
+        },
+        {
+            id: 'danger_zone',
+            name: '危险区域',
+            icon: '☠️',
+            examples: ['工业区有泄漏', '东桥已坍塌', '地下管道有毒气', '南门有伏击'],
+            distortedExamples: {
+                simple: ['工业~区~泄~漏', '东桥~坍~塌', '地下~管~道~毒气', '南门~伏~击'],
+                medium: ['铁烟之地不可近', '东方断桥莫渡', '地底暗流夺命', '南关险阻藏杀机'],
+                complex: ['铁兽沉眠毒雾弥漫之所', '东去断龙脉处绝路', '地渊幽蛇吐息之地', '南面伏兵暗影重重']
+            }
+        }
     ],
 
     survivorNames: ['李明', '王芳', '张伟', '刘洋', '陈静', '杨帆', '赵磊', '周婷', '吴强', '郑雪'],

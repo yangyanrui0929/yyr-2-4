@@ -857,3 +857,318 @@ body {
         justify-content: flex-start;
     }
 }
+
+.cipher-config {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.cipher-section {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.cipher-section h4 {
+    color: #e94560;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.cipher-type-list,
+.cipher-scheme-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cipher-type-btn,
+.cipher-scheme-btn {
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.cipher-type-btn:hover,
+.cipher-scheme-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+}
+
+.cipher-type-btn.selected {
+    border-color: #e94560;
+    background: rgba(233, 69, 96, 0.15);
+    color: #fff;
+}
+
+.cipher-scheme-btn.selected {
+    color: #fff;
+}
+
+.cipher-scheme-btn.selected[data-scheme="simple"] {
+    border-color: #f39c12;
+    background: rgba(243, 156, 18, 0.15);
+}
+
+.cipher-scheme-btn.selected[data-scheme="medium"] {
+    border-color: #3498db;
+    background: rgba(52, 152, 219, 0.15);
+}
+
+.cipher-scheme-btn.selected[data-scheme="complex"] {
+    border-color: #9b59b6;
+    background: rgba(155, 89, 182, 0.15);
+}
+
+.cipher-scheme-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.cipher-scheme-name {
+    font-weight: bold;
+}
+
+.cipher-scheme-security {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.cipher-scheme-desc {
+    font-size: 11px;
+    color: #888;
+}
+
+.cipher-select {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.cipher-action {
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.cipher-output {
+    margin-bottom: 20px;
+}
+
+.cipher-text-box {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 15px;
+    line-height: 1.8;
+    letter-spacing: 1px;
+}
+
+.cipher-text-box.original {
+    background: rgba(46, 204, 113, 0.1);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+}
+
+.cipher-text-box.encoded {
+    background: rgba(233, 69, 96, 0.1);
+    border: 1px solid rgba(233, 69, 96, 0.3);
+    color: #e94560;
+    font-weight: bold;
+}
+
+.cipher-text-box h4 {
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.cipher-security-info {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.cipher-security-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.cipher-security-stat .label {
+    color: #888;
+}
+
+.cipher-security-stat .value {
+    font-weight: bold;
+}
+
+.cipher-security-stat .value.high-risk {
+    color: #e74c3c;
+}
+
+.cipher-security-stat .value.medium-risk {
+    color: #f39c12;
+}
+
+.cipher-security-stat .value.low-risk {
+    color: #2ecc71;
+}
+
+.cipher-decode-results {
+    margin-bottom: 20px;
+}
+
+.cipher-decode-results h4 {
+    color: #3498db;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.district-decode-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.district-decode-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    transition: all 0.3s;
+    animation: fadeIn 0.3s ease;
+}
+
+.district-decode-card.correct {
+    border-color: rgba(46, 204, 113, 0.4);
+}
+
+.district-decode-card.partial {
+    border-color: rgba(243, 156, 18, 0.4);
+}
+
+.district-decode-card.wrong {
+    border-color: rgba(231, 76, 60, 0.4);
+}
+
+.district-decode-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.district-decode-name {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.district-decode-badge {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.district-decode-badge.correct {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.district-decode-badge.partial {
+    background: rgba(243, 156, 18, 0.2);
+    color: #f39c12;
+}
+
+.district-decode-badge.wrong {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.district-decode-detail {
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.district-decode-detail .interpretation {
+    margin-bottom: 6px;
+}
+
+.district-decode-detail .interpretation-label {
+    color: #888;
+    font-size: 11px;
+}
+
+.district-decode-factors {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.district-decode-factor {
+    font-size: 11px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.district-decode-factor .factor-bar {
+    width: 50px;
+    height: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.district-decode-factor .factor-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.factor-fill.trust {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+}
+
+.factor-fill.knowledge {
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+}
+
+.cipher-broadcast-action {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.cipher-cost-hint {
+    font-size: 13px;
+    color: #888;
+}

@@ -51,7 +51,15 @@ class UndergroundRadioGame {
                 broadcastDone: false,
                 qaDone: 0,
                 repairDone: [],
-                rumorSuppressDone: []
+                rumorSuppressDone: [],
+                cipherDone: false
+            },
+            cipher: {
+                selectedType: null,
+                selectedScheme: null,
+                selectedContentIndex: null,
+                generatedCipher: null,
+                decodeResults: null
             },
             gameOver: false
         };
@@ -138,6 +146,12 @@ class UndergroundRadioGame {
         document.getElementById('doBroadcastBtn').addEventListener('click', () => this.doBroadcast());
         document.getElementById('doRepairBtn').addEventListener('click', () => this.doRepair());
         document.getElementById('suppressRumorBtn').addEventListener('click', () => this.suppressRumor());
+        document.getElementById('doCipherBtn').addEventListener('click', () => this.generateCipher());
+        document.getElementById('broadcastCipherBtn').addEventListener('click', () => this.broadcastCipher());
+        document.getElementById('cipherContentSelect').addEventListener('change', (e) => {
+            this.gameState.cipher.selectedContentIndex = e.target.value !== '' ? parseInt(e.target.value) : null;
+            this.updateCipherGenerateBtn();
+        });
 
         ['power', 'noise', 'rumor', 'fatigue', 'morale'].forEach(stat => {
             const slider = document.getElementById(stat + 'ThresholdSlider');
@@ -175,6 +189,7 @@ class UndergroundRadioGame {
         this.renderRumors();
         this.renderSettlements();
         this.renderThresholds();
+        this.renderCipher();
     }
 
     renderStatus() {
@@ -258,13 +273,21 @@ class UndergroundRadioGame {
         this.gameState.districts.forEach(district => {
             const item = document.createElement('div');
             item.className = 'district-item';
+            const knowledge = district.knowledge !== undefined ? district.knowledge : 50;
             item.innerHTML = `
                 <div class="district-name">
                     <span>${district.name}</span>
-                    <span style="color:#3498db">${district.trust}%</span>
+                    <span style="color:#3498db">🤝${district.trust}%</span>
+                </div>
+                <div class="district-bar" style="margin-bottom:3px">
+                    <div class="district-bar-fill" style="width:${district.trust}%"></div>
+                </div>
+                <div class="district-name" style="font-size:11px">
+                    <span style="color:#888">知识水平</span>
+                    <span style="color:#2ecc71">📚${knowledge}%</span>
                 </div>
                 <div class="district-bar">
-                    <div class="district-bar-fill" style="width:${district.trust}%"></div>
+                    <div class="district-bar-fill" style="width:${knowledge}%; background:linear-gradient(90deg, #2ecc71, #27ae60)"></div>
                 </div>
             `;
             container.appendChild(item);
@@ -785,7 +808,16 @@ class UndergroundRadioGame {
             broadcastDone: false,
             qaDone: 0,
             repairDone: [],
-            rumorSuppressDone: []
+            rumorSuppressDone: [],
+            cipherDone: false
+        };
+
+        this.gameState.cipher = {
+            selectedType: null,
+            selectedScheme: null,
+            selectedContentIndex: null,
+            generatedCipher: null,
+            decodeResults: null
         };
 
         this.generateDailyRumors();
@@ -846,6 +878,377 @@ class UndergroundRadioGame {
 
     closeModal() {
         document.getElementById('eventModal').classList.remove('active');
+    }
+
+    renderCipher() {
+        const cs = this.gameState.cipher;
+        this.renderCipherMsgTypes();
+        this.renderCipherContentSelect();
+        this.renderCipherSchemes();
+        this.updateCipherGenerateBtn();
+        this.renderCipherOutput();
+    }
+
+    renderCipherMsgTypes() {
+        const container = document.getElementById('cipherMsgTypes');
+        const cs = this.gameState.cipher;
+        container.innerHTML = '';
+
+        GameData.cipherMessageTypes.forEach(type => {
+            const btn = document.createElement('button');
+            btn.className = 'cipher-type-btn';
+            if (cs.selectedType === type.id) btn.classList.add('selected');
+            btn.innerHTML = `<div>${type.icon} ${type.name}</div>`;
+            btn.addEventListener('click', () => {
+                cs.selectedType = type.id;
+                cs.selectedContentIndex = null;
+                cs.generatedCipher = null;
+                cs.decodeResults = null;
+                this.renderCipher();
+            });
+            container.appendChild(btn);
+        });
+    }
+
+    renderCipherContentSelect() {
+        const select = document.getElementById('cipherContentSelect');
+        const cs = this.gameState.cipher;
+        select.innerHTML = '';
+
+        if (!cs.selectedType) {
+            select.innerHTML = '<option value="">请先选择信息类型</option>';
+            return;
+        }
+
+        const msgType = GameData.cipherMessageTypes.find(t => t.id === cs.selectedType);
+        if (!msgType) return;
+
+        select.innerHTML = '<option value="">-- 请选择内容 --</option>';
+        msgType.examples.forEach((example, idx) => {
+            const option = document.createElement('option');
+            option.value = idx;
+            option.textContent = example;
+            if (cs.selectedContentIndex === idx) option.selected = true;
+            select.appendChild(option);
+        });
+    }
+
+    renderCipherSchemes() {
+        const container = document.getElementById('cipherSchemes');
+        const cs = this.gameState.cipher;
+        container.innerHTML = '';
+
+        GameData.cipherSchemes.forEach(scheme => {
+            const btn = document.createElement('button');
+            btn.className = 'cipher-scheme-btn';
+            btn.setAttribute('data-scheme', scheme.id);
+            if (cs.selectedScheme === scheme.id) btn.classList.add('selected');
+
+            let securityLabel = '低';
+            let securityClass = 'high-risk';
+            if (scheme.security >= 70) { securityLabel = '高'; securityClass = 'low-risk'; }
+            else if (scheme.security >= 40) { securityLabel = '中'; securityClass = 'medium-risk'; }
+
+            let leakPercent = Math.round(scheme.leakChance * 100);
+
+            btn.innerHTML = `
+                <div class="cipher-scheme-header">
+                    <span class="cipher-scheme-name">${scheme.icon} ${scheme.name}</span>
+                    <span class="cipher-scheme-security" style="background:${scheme.color}22; color:${scheme.color}">安全性 ${scheme.security}%</span>
+                </div>
+                <div class="cipher-scheme-desc">${scheme.desc}</div>
+                <div style="margin-top:6px; font-size:11px; color:#888">
+                    ⚡耗电 ${scheme.powerCost} | 泄露风险 <span class="${securityClass}" style="font-weight:bold">${leakPercent}%</span> | 基础理解率 ${scheme.decodeBase}%
+                </div>
+            `;
+            btn.addEventListener('click', () => {
+                cs.selectedScheme = scheme.id;
+                cs.generatedCipher = null;
+                cs.decodeResults = null;
+                this.renderCipher();
+            });
+            container.appendChild(btn);
+        });
+    }
+
+    updateCipherGenerateBtn() {
+        const cs = this.gameState.cipher;
+        const btn = document.getElementById('doCipherBtn');
+        const canGenerate = cs.selectedType && cs.selectedScheme && cs.selectedContentIndex !== null;
+        btn.disabled = !canGenerate || this.gameState.todayActions.cipherDone;
+    }
+
+    renderCipherOutput() {
+        const cs = this.gameState.cipher;
+
+        if (!cs.generatedCipher) {
+            document.getElementById('cipherOriginal').style.display = 'none';
+            document.getElementById('cipherEncoded').style.display = 'none';
+            document.getElementById('cipherSecurityInfo').style.display = 'none';
+            document.getElementById('cipherDecodeResults').style.display = 'none';
+            document.getElementById('cipherBroadcastAction').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('cipherOriginal').style.display = 'block';
+        document.getElementById('cipherOriginalText').textContent = cs.generatedCipher.original;
+
+        document.getElementById('cipherEncoded').style.display = 'block';
+        document.getElementById('cipherEncodedText').textContent = cs.generatedCipher.encoded;
+
+        const scheme = GameData.cipherSchemes.find(s => s.id === cs.selectedScheme);
+        const leakPercent = Math.round(scheme.leakChance * 100);
+        let leakClass = 'high-risk';
+        if (leakPercent <= 15) leakClass = 'low-risk';
+        else if (leakPercent <= 35) leakClass = 'medium-risk';
+
+        document.getElementById('cipherSecurityInfo').style.display = 'flex';
+        document.getElementById('cipherSecurityInfo').innerHTML = `
+            <div class="cipher-security-stat">
+                <span class="label">安全性:</span>
+                <span class="value ${leakClass === 'low-risk' ? 'low-risk' : 'medium-risk'}">${scheme.security}%</span>
+            </div>
+            <div class="cipher-security-stat">
+                <span class="label">泄露风险:</span>
+                <span class="value ${leakClass}">${leakPercent}%</span>
+            </div>
+            <div class="cipher-security-stat">
+                <span class="label">基础理解率:</span>
+                <span class="value">${scheme.decodeBase}%</span>
+            </div>
+            <div class="cipher-security-stat">
+                <span class="label">耗电:</span>
+                <span class="value">⚡${scheme.powerCost}</span>
+            </div>
+        `;
+
+        this.renderDecodeResults();
+    }
+
+    renderDecodeResults() {
+        const cs = this.gameState.cipher;
+        if (!cs.decodeResults) {
+            document.getElementById('cipherDecodeResults').style.display = 'none';
+            document.getElementById('cipherBroadcastAction').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('cipherDecodeResults').style.display = 'block';
+        document.getElementById('cipherBroadcastAction').style.display = 'flex';
+
+        const scheme = GameData.cipherSchemes.find(s => s.id === cs.selectedScheme);
+        const costHint = document.getElementById('cipherCostHint');
+        const canAfford = this.gameState.status.power >= scheme.powerCost;
+        costHint.innerHTML = `耗电: ⚡${scheme.powerCost} ${canAfford ? '' : '<span style="color:#e74c3c">(电量不足!)</span>'}`;
+        document.getElementById('broadcastCipherBtn').disabled = !canAfford || this.gameState.todayActions.cipherDone;
+
+        const container = document.getElementById('districtDecodeList');
+        container.innerHTML = '';
+
+        cs.decodeResults.forEach(result => {
+            const card = document.createElement('div');
+            card.className = 'district-decode-card ' + result.level;
+
+            let badgeText = '✅ 正确理解';
+            let badgeClass = 'correct';
+            if (result.level === 'partial') { badgeText = '⚠️ 部分理解'; badgeClass = 'partial'; }
+            else if (result.level === 'wrong') { badgeText = '❌ 完全误解'; badgeClass = 'wrong'; }
+
+            card.innerHTML = `
+                <div class="district-decode-header">
+                    <span class="district-decode-name">${result.districtName}</span>
+                    <span class="district-decode-badge ${badgeClass}">${badgeText}</span>
+                </div>
+                <div class="district-decode-detail">
+                    <div class="interpretation">
+                        <span class="interpretation-label">解读结果:</span>
+                        <div>${result.interpretation}</div>
+                    </div>
+                </div>
+                <div class="district-decode-factors">
+                    <div class="district-decode-factor">
+                        <span>信任</span>
+                        <div class="factor-bar"><div class="factor-fill trust" style="width:${result.trust}%"></div></div>
+                        <span>${result.trust}%</span>
+                    </div>
+                    <div class="district-decode-factor">
+                        <span>知识</span>
+                        <div class="factor-bar"><div class="factor-fill knowledge" style="width:${result.knowledge}%"></div></div>
+                        <span>${result.knowledge}%</span>
+                    </div>
+                    <div class="district-decode-factor">
+                        <span>理解率</span>
+                        <span style="font-weight:bold; color:${result.level === 'correct' ? '#2ecc71' : result.level === 'partial' ? '#f39c12' : '#e74c3c'}">${result.decodeRate}%</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    generateCipher() {
+        const cs = this.gameState.cipher;
+        if (!cs.selectedType || !cs.selectedScheme || cs.selectedContentIndex === null) return;
+
+        const msgType = GameData.cipherMessageTypes.find(t => t.id === cs.selectedType);
+        const scheme = GameData.cipherSchemes.find(s => s.id === cs.selectedScheme);
+        if (!msgType || !scheme) return;
+
+        const original = msgType.examples[cs.selectedContentIndex];
+        const encoded = msgType.distortedExamples[scheme.id][cs.selectedContentIndex];
+
+        cs.generatedCipher = { original, encoded };
+
+        cs.decodeResults = this.gameState.districts.map(district => {
+            const knowledge = district.knowledge !== undefined ? district.knowledge : 50;
+            const trustFactor = district.trust / 100;
+            const knowledgeFactor = knowledge / 100;
+
+            let decodeRate = scheme.decodeBase * (0.4 + 0.3 * trustFactor + 0.3 * knowledgeFactor);
+            decodeRate = Math.max(0, Math.min(100, Math.round(decodeRate + (Math.random() * 10 - 5))));
+
+            let level, interpretation;
+            if (decodeRate >= 70) {
+                level = 'correct';
+                interpretation = original;
+            } else if (decodeRate >= 40) {
+                level = 'partial';
+                interpretation = this.generatePartialInterpretation(original, encoded, decodeRate);
+            } else {
+                level = 'wrong';
+                interpretation = this.generateWrongInterpretation(cs.selectedType, encoded);
+            }
+
+            return {
+                districtId: district.id,
+                districtName: district.name,
+                trust: district.trust,
+                knowledge: knowledge,
+                decodeRate,
+                level,
+                interpretation
+            };
+        });
+
+        this.renderCipherOutput();
+    }
+
+    generatePartialInterpretation(original, encoded, rate) {
+        const chars = original.split('');
+        const keepCount = Math.ceil(chars.length * rate / 100);
+        const indices = [...Array(chars.length).keys()].sort(() => Math.random() - 0.5);
+        const keepSet = new Set(indices.slice(0, keepCount));
+
+        let result = '';
+        const encodedChars = encoded.split('');
+        let eIdx = 0;
+        for (let i = 0; i < chars.length; i++) {
+            if (keepSet.has(i)) {
+                result += chars[i];
+            } else {
+                if (eIdx < encodedChars.length) {
+                    result += '?';
+                }
+            }
+        }
+        const knownParts = original.split('').filter((_, i) => keepSet.has(i)).join('');
+        const unknownParts = original.split('').filter((_, i) => !keepSet.has(i));
+        if (unknownParts.length === 0) return original;
+
+        const partialPrefixes = [
+            `大致理解: ${knownParts}... (部分信息模糊)`,
+            `解读为: ${knownParts}[?] (存在歧义)`,
+            `认为含义是: ${knownParts}...(不够确定)`
+        ];
+        return partialPrefixes[Math.floor(Math.random() * partialPrefixes.length)];
+    }
+
+    generateWrongInterpretation(msgTypeId, encoded) {
+        const wrongMap = {
+            rescue_time: [
+                '以为是文化娱乐活动通知，与救援无关',
+                '误认为天气相关提醒，忽略了时间信息',
+                '理解为物资分配信号，而非救援时间',
+                '解读为某种象征性宣言，时间信息完全丢失'
+            ],
+            supply_location: [
+                '以为是军事据点标记，不敢前往',
+                '误认为危险区域警告，反而避开物资点',
+                '理解为精神鼓励口号，未定位具体地点',
+                '解读为某种仪式地点，与物资无关'
+            ],
+            danger_zone: [
+                '以为是指安全区域，反而前往危险地带',
+                '误读为资源丰富地区的指引',
+                '理解为天气变化预警，忽略了实际危险',
+                '认为只是演习通知，未做任何防范'
+            ]
+        };
+        const options = wrongMap[msgTypeId] || ['无法解读暗号内容'];
+        return options[Math.floor(Math.random() * options.length)];
+    }
+
+    broadcastCipher() {
+        const cs = this.gameState.cipher;
+        if (!cs.generatedCipher || !cs.decodeResults || this.gameState.todayActions.cipherDone) return;
+
+        const scheme = GameData.cipherSchemes.find(s => s.id === cs.selectedScheme);
+        if (this.gameState.status.power < scheme.powerCost) {
+            this.showEvent('电力不足', '电量不足，无法播报暗号！', [{ text: '⚡电量不足', type: 'negative' }]);
+            return;
+        }
+
+        this.gameState.status.power -= scheme.powerCost;
+        this.gameState.todayActions.cipherDone = true;
+
+        const leaked = Math.random() < scheme.leakChance;
+        const effectTags = [];
+
+        effectTags.push({ text: `⚡ 电量 -${scheme.powerCost}`, type: 'negative' });
+
+        if (leaked) {
+            this.gameState.status.noise = Math.min(100, this.gameState.status.noise + 15);
+            this.gameState.status.rumor = Math.min(100, this.gameState.status.rumor + 10);
+            effectTags.push({ text: '🚨 暗号泄露！', type: 'negative' });
+            effectTags.push({ text: '🔊 噪声 +15', type: 'negative' });
+            effectTags.push({ text: '🗣️ 谣言 +10', type: 'negative' });
+        } else {
+            effectTags.push({ text: '🛡️ 暗号安全', type: 'positive' });
+        }
+
+        let correctCount = 0;
+        let partialCount = 0;
+        let wrongCount = 0;
+
+        cs.decodeResults.forEach(result => {
+            const district = this.gameState.districts.find(d => d.id === result.districtId);
+            if (!district) return;
+
+            if (result.level === 'correct') {
+                correctCount++;
+                district.trust = Math.min(100, district.trust + 3);
+                this.gameState.status.morale = Math.min(100, this.gameState.status.morale + 2);
+            } else if (result.level === 'partial') {
+                partialCount++;
+                district.trust = Math.max(0, district.trust - 2);
+            } else {
+                wrongCount++;
+                district.trust = Math.max(0, district.trust - 5);
+                this.gameState.status.morale = Math.max(0, this.gameState.status.morale - 3);
+                this.gameState.status.rumor = Math.min(100, this.gameState.status.rumor + 3);
+            }
+        });
+
+        effectTags.push({ text: `✅ ${correctCount}区正确理解`, type: 'positive' });
+        if (partialCount > 0) effectTags.push({ text: `⚠️ ${partialCount}区部分理解`, type: 'negative' });
+        if (wrongCount > 0) effectTags.push({ text: `❌ ${wrongCount}区完全误解`, type: 'negative' });
+
+        const summary = leaked
+            ? `暗号播报完成，但信息被敌对势力截获！${correctCount}区正确理解，${partialCount}区部分理解，${wrongCount}区误解。`
+            : `暗号播报安全送达！${correctCount}区正确理解，${partialCount}区部分理解，${wrongCount}区误解。`;
+
+        this.showEvent('暗号播报完成', summary, effectTags);
+        this.renderAll();
     }
 
     gameOver(title, message) {
