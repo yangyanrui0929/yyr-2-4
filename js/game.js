@@ -1104,7 +1104,7 @@ class UndergroundRadioGame {
             const trustFactor = district.trust / 100;
             const knowledgeFactor = knowledge / 100;
 
-            let decodeRate = scheme.decodeBase * (0.4 + 0.3 * trustFactor + 0.3 * knowledgeFactor);
+            let decodeRate = scheme.decodeBase * (0.3 + 0.35 * trustFactor + 0.35 * knowledgeFactor);
             decodeRate = Math.max(0, Math.min(100, Math.round(decodeRate + (Math.random() * 10 - 5))));
 
             let level, interpretation;

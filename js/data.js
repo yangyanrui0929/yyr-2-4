@@ -154,7 +154,7 @@ const GameData = {
             security: 85,
             powerCost: 15,
             leakChance: 0.08,
-            decodeBase: 35,
+            decodeBase: 58,
             color: '#9b59b6'
         }
     ],
